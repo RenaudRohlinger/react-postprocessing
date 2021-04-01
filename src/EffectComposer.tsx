@@ -17,8 +17,8 @@ export type EffectComposerProps = {
   depthBuffer?: boolean
   stencilBuffer?: boolean
   autoClear?: boolean
-  effectPreComposer?: any
   multisampling?: number
+  customGl?: any
   frameBufferType?: TextureDataType
   renderPriority?: number
   camera?: THREE.Camera
@@ -34,8 +34,8 @@ const EffectComposer = React.memo(
         scene,
         renderPriority = 1,
         autoClear = true,
-        effectPreComposer = null,
         depthBuffer,
+        customGl,
         stencilBuffer,
         multisampling = 8,
         frameBufferType = HalfFloatType,
@@ -48,7 +48,7 @@ const EffectComposer = React.memo(
 
       const [composer, normalPass] = useMemo(() => {
         // Initialize composer
-        const effectComposer = new EffectComposerImpl(gl, {
+        const effectComposer = new EffectComposerImpl(customGl || gl, {
           depthBuffer,
           stencilBuffer,
           multisampling: isWebGL2Available() ? multisampling : 0,
@@ -60,14 +60,10 @@ const EffectComposer = React.memo(
         const pass = new NormalPass(scene, camera)
         effectComposer.addPass(pass)
         return [effectComposer, pass]
-      }, [camera, gl, depthBuffer, stencilBuffer, multisampling, frameBufferType, scene])
+      }, [camera, customGl, gl, depthBuffer, stencilBuffer, multisampling, frameBufferType, scene])
 
       useEffect(() => composer?.setSize(size.width, size.height), [composer, size])
-      useFrame(
-        (_, delta) =>
-          void ((gl.autoClear = autoClear), effectPreComposer ? effectPreComposer() : null, composer.render(delta)),
-        renderPriority
-      )
+      useFrame((_, delta) => void ((gl.autoClear = autoClear), composer.render(delta)), renderPriority)
 
       const group = useRef(null)
       useEffect(() => {
